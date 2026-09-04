@@ -1,18 +1,17 @@
 name: QA Tests & Dashboard
 
-# Cuándo se ejecuta
+
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:   # permite lanzarlo manualmente desde la pestaña Actions
+  workflow_dispatch:   
 
-# Permisos necesarios para publicar en GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Evita despliegues simultáneos
+
 concurrency:
   group: "pages"
   cancel-in-progress: false
