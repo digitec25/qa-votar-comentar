@@ -1,12 +1,3 @@
-"""
-conftest.py - Captura de evidencias automáticas para la suite de pruebas.
-
-Genera una captura de pantalla por cada test (PASSED / FAILED / SKIPPED) en
-./evidencias/ con nombre <resultado>_<test>_<timestamp>.png, y la incrusta
-en el reporte HTML (pytest-html) en base64, para que reporte.html sea
-realmente autocontenido y portable.
-"""
-
 import os
 import base64
 import datetime
