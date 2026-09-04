@@ -1,8 +1,0 @@
-# Artefactos de ejecución (se regeneran en CI)
-evidencias/
-sitio/
-reporte.html
-reporte.json
-.pytest_cache/
-__pycache__/
-*.pyc
