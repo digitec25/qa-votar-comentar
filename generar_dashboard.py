@@ -1,27 +1,3 @@
-"""
-generar_dashboard.py
---------------------
-Genera un sitio web (dashboard HTML autocontenido) con los resultados de las
-pruebas y sus evidencias.
-
-Uso:
-  1) Ejecutar las pruebas guardando el resumen JSON de pytest:
-       py -m pytest test_votar_comentar.py -v --json-report --json-report-file=reporte.json
-     (requiere: pip install pytest-json-report)
-     Si no tienes ese plugin, el script igual funciona leyendo solo las
-     imágenes de la carpeta evidencias/.
-
-  2) Generar el sitio:
-       py generar_dashboard.py
-
-Salida:
-  ./sitio/index.html   -> ábrelo en el navegador (doble clic) o publícalo.
-
-El HTML incrusta las imágenes en base64, así que el archivo es portable:
-puedes moverlo, comprimirlo o subirlo a cualquier hosting estático
-(GitHub Pages, Netlify, un bucket, etc.) y las evidencias viajan dentro.
-"""
-
 import os
 import re
 import json
@@ -36,7 +12,6 @@ JSON_REPORT = os.path.join(BASE, "reporte.json")
 os.makedirs(OUT_DIR, exist_ok=True)
 
 
-# --- Descripciones de los casos (para enriquecer el dashboard) ---------------
 CASOS = {
     "TC00a": ("Registro de usuario nuevo", "Precondición"),
     "TC00b": ("Login tras registro", "CA1"),
@@ -58,7 +33,7 @@ CASOS = {
 
 
 def leer_resultados_json():
-    """Lee resultados desde reporte.json (pytest-json-report). Devuelve dict test->outcome."""
+
     resultados = {}
     if not os.path.exists(JSON_REPORT):
         return resultados
@@ -66,7 +41,7 @@ def leer_resultados_json():
         data = json.load(open(JSON_REPORT, encoding="utf-8"))
         for t in data.get("tests", []):
             nodeid = t.get("nodeid", "")
-            outcome = t.get("outcome", "")  # passed/failed/skipped
+            outcome = t.get("outcome", "")  
             m = re.search(r"(TC\d+)", nodeid)
             if m:
                 resultados[m.group(1)] = outcome
@@ -76,7 +51,7 @@ def leer_resultados_json():
 
 
 def leer_evidencias():
-    """Agrupa las imágenes de evidencias/ por caso (TCxx) y por paso (PASO_...)."""
+   
     por_caso = {}
     pasos = []
     if not os.path.isdir(EVID_DIR):
@@ -101,7 +76,7 @@ def leer_evidencias():
 
 
 def outcome_desde_nombre(archivos):
-    """Deduce el resultado a partir del prefijo del archivo (PASSED_/FAILED_/SKIPPED_)."""
+   
     for fn, _ in archivos:
         up = fn.upper()
         if up.startswith("FAILED"):
@@ -116,7 +91,7 @@ def outcome_desde_nombre(archivos):
 def construir_html(resultados, por_caso, pasos):
     ts = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
 
-    # Combinar fuentes de resultado: JSON tiene prioridad; si no, el nombre del archivo
+    
     estados = {}
     for tc in CASOS:
         if tc in resultados:
@@ -166,12 +141,7 @@ def construir_html(resultados, por_caso, pasos):
           <div class="galeria">{galeria}</div>
         </section>"""
 
-    # Galería de pasos intermedios (antes/después de votar, payload XSS, etc.)
-    pasos_html = ""
-    for fn, img in pasos:
-        pasos_html += f'<figure><img src="{img}" alt="{fn}"><figcaption>{fn}</figcaption></figure>'
-    if not pasos_html:
-        pasos_html = '<p class="muted">No hay capturas de pasos intermedios.</p>'
+    
 
     html = f"""<!DOCTYPE html>
 <html lang="es">
