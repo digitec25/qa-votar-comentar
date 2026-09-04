@@ -1,22 +1,3 @@
-"""
-Suite de pruebas E2E - HU: Votar y comentar un auto
-Aplicación: https://buggy.justtestit.org/ (Buggy Cars Rating)
-
-Framework: pytest + Selenium WebDriver · Page Object Model
-Selectores verificados contra el DOM real (diagnóstico completo del sitio).
-
-CARACTERÍSTICAS:
-- Registra un usuario NUEVO automáticamente en cada corrida (sin credenciales manuales).
-- Reutiliza esa sesión para todos los casos autenticados.
-- Los defectos reales del sitio se afirman de forma ESTRICTA: si el sitio falla,
-  el test sale FAILED (rojo). No se usan xfail que oculten defectos.
-
-Ejecución:
-    pip install selenium pytest pytest-html pytest-json-report
-    py -m pytest test_votar_comentar.py -v --html=reporte.html --self-contained-html \
-        --json-report --json-report-file=reporte.json
-"""
-
 import os, time, random, string, re
 import pytest
 from selenium import webdriver
@@ -37,13 +18,11 @@ def _rnd(n=7):
 
 
 # Credenciales generadas una sola vez por sesión de pruebas
-REG_USER = "qa" + _rnd(8)
-REG_PASS = "Passw0rd!" + _rnd(3)
+REG_USER = "qausers" + _rnd(8)
+REG_PASS = "cr1233w112" + _rnd(3)
 
 
-# ---------------------------------------------------------------------------
-# Page Objects
-# ---------------------------------------------------------------------------
+
 class Base:
     def __init__(self, driver):
         self.driver = driver
@@ -103,7 +82,7 @@ class Nav(Base):
         self.find(*self.PASS_INPUT).clear()
         self.find(*self.PASS_INPUT).send_keys(pwd)
         self.click(*self.LOGIN_BTN)
-        # Esperar a que aparezca Logout (sesión iniciada)
+      
         return self.present(*self.LOGOUT, timeout=10)
 
     def is_logged_in(self):
@@ -127,13 +106,13 @@ class RegisterPage(Base):
 
     def register(self, user, pwd):
         self.open("register")
-        # hay dos inputs password con el mismo name; usar el primero para 'password'
+       
         self.find(*self.LOGIN).send_keys(user)
         self.find(*self.USERNAME).send_keys(user)
         self.find(*self.FIRST).send_keys("QA")
         self.find(*self.LAST).send_keys("Tester")
         passwords = self.driver.find_elements(By.CSS_SELECTOR, "input[type='password']")
-        # password (primero) y confirmPassword (último)
+       
         passwords[0].send_keys(pwd)
         self.driver.find_element(*self.CONFIRM).send_keys(pwd)
         self.click(*self.REGISTER_BTN)
@@ -159,7 +138,7 @@ class CarPage(Base):
 
     def open_car(self):
         self.open(CAR_PATH)
-        self.find(*self.VOTES)   # esperar render
+        self.find(*self.VOTES) 
         return self
 
     def votes_count(self):
@@ -186,9 +165,7 @@ class CarPage(Base):
         return tds[-1].text.strip() if tds else None
 
 
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+
 @pytest.fixture(scope="session")
 def _driver_session():
     opts = Options()
@@ -207,7 +184,7 @@ def driver(_driver_session):
     return _driver_session
 
 
-# Estado compartido del registro/login a nivel de sesión
+
 _session_state = {"registered": False, "logged_in": False, "register_msg": ""}
 
 
@@ -230,9 +207,7 @@ def logged_car(driver):
     return CarPage(driver).open_car()
 
 
-# ---------------------------------------------------------------------------
-# TC00 - Registro + Login (precondición y prueba en sí misma)
-# ---------------------------------------------------------------------------
+
 class TestRegistroLogin:
     def test_TC00a_registro_usuario(self, driver):
         """Registrar un usuario nuevo debe indicar 'Registration is successful'."""
@@ -244,7 +219,6 @@ class TestRegistroLogin:
             f"El registro no fue exitoso. Mensaje del sitio: {msg!r}"
 
     def test_TC00b_login_tras_registro(self, driver):
-        """Login con el usuario recién registrado debe iniciar sesión (mostrar Logout)."""
         ok = Nav(driver).login(REG_USER, REG_PASS)
         _session_state["logged_in"] = ok
         driver.save_screenshot(_ev("PASO_TC00b_login"))
@@ -252,9 +226,7 @@ class TestRegistroLogin:
                     f"({REG_USER}). DEFECTO: el login tras registro no funciona.")
 
 
-# ---------------------------------------------------------------------------
-# CA2 - Sin sesión: controles ocultos + mensaje
-# ---------------------------------------------------------------------------
+
 class TestSinSesion:
     def test_TC01_voto_oculto_sin_sesion(self, driver):
         """CA2: el botón de votar debe estar OCULTO sin sesión."""
@@ -280,9 +252,7 @@ class TestSinSesion:
             "DEFECTO (CA2): no se muestra el mensaje de 'iniciar sesión para votar'."
 
 
-# ---------------------------------------------------------------------------
-# CA5 - Datos de la ficha
-# ---------------------------------------------------------------------------
+
 class TestFichaAuto:
     def test_TC04_muestra_descripcion(self, car):
         car.highlight(*CarPage.MODEL); car.shot("TC04_descripcion")
@@ -300,18 +270,16 @@ class TestFichaAuto:
         assert n is not None and n >= 0, "No se muestra la cantidad total de votos."
 
 
-# ---------------------------------------------------------------------------
-# CA1 / CA3 / CA4 - Autenticado (pruebas reales)
-# ---------------------------------------------------------------------------
+
 class TestConSesion:
     def test_TC07_controles_visibles_con_sesion(self, logged_car):
-        """CA1: con sesión, botón de votar y campo comentario visibles."""
+       
         logged_car.highlight(*CarPage.VOTE_BTN); logged_car.shot("TC07_controles")
         assert logged_car.present(*CarPage.VOTE_BTN, timeout=6), "Falta botón Vote!"
         assert logged_car.present(*CarPage.COMMENT, timeout=6), "Falta campo comentario."
 
     def test_TC08_votar_incrementa_contador(self, logged_car):
-        """CA1: votar incrementa el contador en 1."""
+
         antes = logged_car.votes_count()
         logged_car.shot("TC08_antes")
         logged_car.vote()
@@ -321,21 +289,21 @@ class TestConSesion:
             f"El contador debía subir de {antes} a {antes+1}, pero quedó en {despues}."
 
     def test_TC09_comentario_opcional(self, logged_car):
-        """CA3: se puede votar SIN comentario (el comentario es opcional)."""
+       
         antes = logged_car.votes_count()
         logged_car.vote()  # sin escribir comentario
         despues = logged_car.votes_count()
         assert despues == antes + 1, "No se pudo votar sin comentario (debe ser opcional)."
 
     def test_TC10_columnas_tabla_comentarios(self, logged_car):
-        """CA4: la tabla de comentarios tiene columnas Date, Author, Comment."""
+        
         logged_car.highlight(*CarPage.COMMENTS_TABLE); logged_car.shot("TC10_tabla")
         headers = [h.lower() for h in logged_car.headers()]
         for col in ("date", "author", "comment"):
             assert col in headers, f"Falta la columna '{col}'. Headers: {headers}"
 
     def test_TC11_comentario_se_muestra_en_tabla(self, logged_car):
-        """CA4: un comentario nuevo aparece en la tabla tras votar."""
+    
         marca = "QA-" + _rnd(8)
         logged_car.set_comment(marca)
         logged_car.vote()
@@ -345,9 +313,7 @@ class TestConSesion:
         assert marca in cuerpo, f"El comentario {marca!r} no aparece en la tabla tras votar."
 
 
-# ---------------------------------------------------------------------------
-# Negativos / seguridad / borde - DEFECTOS EN ROJO (sin xfail)
-# ---------------------------------------------------------------------------
+
 class TestDefectos:
     def test_TC12_no_permite_doble_voto(self, logged_car):
         """El usuario NO debería poder votar dos veces. Si puede, es un DEFECTO (FAILED)."""
@@ -360,7 +326,6 @@ class TestDefectos:
             f"DEFECTO: se permitió votar 2 veces (de {antes} a {despues})."
 
     def test_TC13_comentario_no_ejecuta_xss(self, logged_car):
-        """Seguridad: un <script> en el comentario NO debe ejecutarse ni guardarse crudo."""
         payload = "<script>window.__xss_test=1</script>"
         logged_car.set_comment(payload)
         logged_car.shot("TC13_payload")
@@ -375,13 +340,11 @@ class TestDefectos:
         logged_car.set_comment("      ")
         logged_car.vote()
         logged_car.open_car(); time.sleep(2)
-        # Observacional: si el sitio guarda un comentario en blanco, es un defecto de validación.
-        # Se afirma que el voto se registró (no rompe), y se deja evidencia.
         logged_car.shot("TC14_espacios")
         assert True
 
 
-# ---------------------------------------------------------------------------
+
 def _ev(nombre):
     import datetime
     d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "evidencias")
